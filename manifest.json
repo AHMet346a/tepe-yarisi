@@ -1,0 +1,39 @@
+{
+  "id": "/tepe-yarisi/",
+  "name": "Ahmet — Tepe Yarışı",
+  "short_name": "Tepe Yarışı",
+  "description": "Ahmet'in tepe tırmanma yarış oyunu. Telefon, tablet ve bilgisayarda çevrimdışı oynanır.",
+  "lang": "tr",
+  "dir": "ltr",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "fullscreen",
+  "display_override": ["fullscreen", "standalone", "minimal-ui"],
+  "orientation": "landscape",
+  "background_color": "#0b1020",
+  "theme_color": "#0b1020",
+  "categories": ["games", "entertainment"],
+  "prefer_related_applications": false,
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" },
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Hemen Oyna",
+      "short_name": "Oyna",
+      "description": "Son aracınla doğrudan yarışa başla",
+      "url": "./index.html?hizli=1",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Garaj",
+      "short_name": "Garaj",
+      "description": "Araçlarını yükselt ve özelleştir",
+      "url": "./index.html?ekran=garaj",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}

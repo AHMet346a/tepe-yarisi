@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="104" fill="#0b1020"/>
+  <path d="M32 402 L176 250 L286 336 L404 168 L480 250 L480 402 Z" fill="#e85d04"/>
+  <path d="M32 402 L176 250 L286 336 L404 168 L480 250" fill="none" stroke="#ff9a3c" stroke-width="10"/>
+  <circle cx="184" cy="416" r="58" fill="#141414"/>
+  <circle cx="184" cy="416" r="24" fill="#ff9a3c"/>
+  <circle cx="360" cy="416" r="58" fill="#141414"/>
+  <circle cx="360" cy="416" r="24" fill="#ff9a3c"/>
+  <text x="256" y="150" font-family="Arial, sans-serif" font-weight="bold" font-size="86" fill="#ffd24a" text-anchor="middle">AHMET</text>
+  <text x="256" y="210" font-family="Arial, sans-serif" font-weight="bold" font-size="34" fill="#e8e8f0" text-anchor="middle">HILL RACING</text>
+</svg>

@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     AHMET  —  Tepe Yarışı
+     © Ahmet. Tüm hakları saklıdır. Özgün yapımdır.
+     ============================================================ -->
+<html lang="tr" translate="no">
+<head>
+<meta charset="UTF-8">
+<meta name="google" content="notranslate">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="author" content="Ahmet">
+<meta name="description" content="Ahmet — özgün tepe yarışı oyunu.">
+<meta name="theme-color" content="#0b1020">
+<link rel="manifest" href="manifest.json">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" href="icon.svg">
+<title>Ahmet — Tepe Yarışı</title>
+<link rel="stylesheet" href="css/style.css">
+<style>
+/* ---- Ahmet açılış/yükleme ekranı (benzersiz id, style.css ile çakışmaz) ---- */
+#ahmet-loader{
+  position:fixed; inset:0; z-index:99999;
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  background:radial-gradient(circle at 50% 35%, #1b2a4a 0%, #0b1020 60%, #05070f 100%);
+  font-family:"Segoe UI", system-ui, -apple-system, Arial, sans-serif;
+  color:#fff; transition:opacity .6s ease; user-select:none;
+}
+#ahmet-loader.hide{ opacity:0; pointer-events:none; }
+#ahmet-loader .title{
+  font-size:clamp(46px,12vw,120px); font-weight:900; letter-spacing:.06em;
+  background:linear-gradient(180deg,#ffe259,#ffa751 55%,#ff6a00);
+  -webkit-background-clip:text; background-clip:text; color:transparent;
+  text-shadow:0 6px 30px rgba(255,150,40,.35);
+  animation:ahmetPulse 2.2s ease-in-out infinite;
+}
+#ahmet-loader .sub{
+  margin-top:2px; font-size:clamp(14px,3.5vw,20px); font-weight:600;
+  letter-spacing:.35em; text-transform:uppercase; color:#8fb3ff; opacity:.9;
+}
+#ahmet-loader .wheel{
+  margin-top:34px; width:64px; height:64px; border-radius:50%;
+  border:7px solid rgba(255,255,255,.12); border-top-color:#ffb347; border-right-color:#ff7b00;
+  animation:ahmetSpin 0.9s linear infinite;
+  box-shadow:0 0 24px rgba(255,140,40,.4);
+}
+#ahmet-loader .bar{
+  margin-top:26px; width:min(260px,60vw); height:8px; border-radius:8px;
+  background:rgba(255,255,255,.1); overflow:hidden;
+}
+#ahmet-loader .bar > i{
+  display:block; height:100%; width:40%; border-radius:8px;
+  background:linear-gradient(90deg,#ffd54a,#ff7b00);
+  animation:ahmetLoad 1.4s ease-in-out infinite;
+}
+#ahmet-loader .copy{
+  position:absolute; bottom:20px; font-size:12px; letter-spacing:.1em;
+  color:rgba(255,255,255,.5);
+}
+@keyframes ahmetSpin{ to{ transform:rotate(360deg); } }
+@keyframes ahmetPulse{ 0%,100%{ transform:scale(1); } 50%{ transform:scale(1.04); } }
+@keyframes ahmetLoad{
+  0%{ transform:translateX(-120%); } 100%{ transform:translateX(320%); }
+}
+</style>
+<script>
+// Polyfill for roundRect (Safari < 16, older browsers)
+if (!CanvasRenderingContext2D.prototype.roundRect) {
+  CanvasRenderingContext2D.prototype.roundRect = function(x,y,w,h,r) {
+    if (typeof r === 'number') r = [r,r,r,r];
+    r = r || [0];
+    if (r.length === 1) r = [r[0],r[0],r[0],r[0]];
+    const [tl,tr,br,bl] = r;
+    this.moveTo(x+tl,y);
+    this.lineTo(x+w-tr,y); this.quadraticCurveTo(x+w,y,x+w,y+tr);
+    this.lineTo(x+w,y+h-br); this.quadraticCurveTo(x+w,y+h,x+w-br,y+h);
+    this.lineTo(x+bl,y+h); this.quadraticCurveTo(x,y+h,x,y+h-bl);
+    this.lineTo(x,y+tl); this.quadraticCurveTo(x,y,x+tl,y);
+    this.closePath();
+    return this;
+  };
+}
+</script>
+<script>
+// ── GLOBAL negatif-yarıçap koruması ──
+// Kısa/yatay ekranlarda bazı ölçüler negatife düşünce roundRect/arc/ellipse/arcTo/
+// createRadialGradient "radius is negative" hatası atıp ekranı kırmızı hataya düşürüyordu.
+// Bu sarmalayıcılar negatif yarıçapı 0'a kırpar → hiçbir ekran bu yüzden çökmez.
+(function () {
+  try {
+    var P = CanvasRenderingContext2D.prototype;
+    var nn = function (v) { return (typeof v === 'number' && isFinite(v)) ? Math.max(0, v) : (isFinite(v) ? v : 0); };
+    if (P.roundRect) {
+      var _rr = P.roundRect;
+      P.roundRect = function (x, y, w, h, r) {
+        if (typeof r === 'number') r = nn(r);
+        else if (Array.isArray(r)) r = r.map(function (v) { return typeof v === 'number' ? nn(v) : v; });
+        try { return _rr.call(this, x, y, w, h, r); } catch (e) { try { return _rr.call(this, x, y, w, h, 0); } catch (e2) {} }
+      };
+    }
+    var _arc = P.arc;
+    P.arc = function (x, y, r, a, b, c) { return _arc.call(this, x, y, nn(r), a, b, c); };
+    var _arcTo = P.arcTo;
+    P.arcTo = function (x1, y1, x2, y2, r) { return _arcTo.call(this, x1, y1, x2, y2, nn(r)); };
+    if (P.ellipse) {
+      var _ell = P.ellipse;
+      P.ellipse = function (x, y, rx, ry, rot, a, b, cc) { return _ell.call(this, x, y, nn(rx), nn(ry), rot, a, b, cc); };
+    }
+    var _crg = P.createRadialGradient;
+    P.createRadialGradient = function (x0, y0, r0, x1, y1, r1) { return _crg.call(this, x0, y0, nn(r0), x1, y1, nn(r1)); };
+  } catch (e) {}
+})();
+</script>
+<script>
+// ── Global hata yakalayıcı: GERÇEK hatayı küçük şeritte göster (oyunu KARARTMA) ──
+(function(){
+  var _t=null;
+  function show(msg){
+    try{
+      var d=document.getElementById('ahmet-error');
+      if(!d){ d=document.createElement('div'); d.id='ahmet-error';
+        d.style.cssText='position:fixed;left:0;top:0;right:0;max-height:26vh;z-index:99999;background:rgba(22,6,6,0.92);color:#ff9a8a;font:12px/1.4 monospace;padding:8px 12px;overflow:auto;white-space:pre-wrap;border-bottom:2px solid #cc3333;';
+        d.onclick=function(){ d.style.display='none'; };
+        (document.body||document.documentElement).appendChild(d);
+      }
+      d.style.display='block';
+      d.textContent = '⚠ '+msg+'\n(kapatmak için tıkla)';
+      clearTimeout(_t); _t=setTimeout(function(){ if(d)d.style.display='none'; }, 8000);
+    }catch(e){}
+  }
+  window.addEventListener('error', function(e){
+    // Çapraz-köken (Firebase CDN vb.) maskeli "Script error." → zararsız, YOK SAY
+    var m = e.message||'';
+    if(m==='Script error.' || m==='Script error' || (!e.filename && (e.lineno===0||e.lineno==null))) return;
+    show('HATA: '+m+'  ['+(e.filename||'').split('/').pop()+':'+e.lineno+']');
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    var r=e.reason; var m=(r&&r.message)||String(r||'');
+    if(m==='Script error.'||!m) return;
+    show('PROMISE: '+m);
+  });
+})();
+</script>
+</head>
+<body>
+<!-- Ahmet açılış ekranı: tüm kod yüklenince otomatik kaybolur -->
+<div id="ahmet-loader">
+  <div class="title">AHMET</div>
+  <div class="sub">Tepe Yarışı</div>
+  <div class="wheel"></div>
+  <div class="bar"><i></i></div>
+  <div class="copy">© Ahmet</div>
+</div>
+<canvas id="gameCanvas"></canvas>
+<script src="js/responsive.js"></script>
+<script src="js/engine.js"></script>
+<script src="js/perf.js"></script>
+<script src="js/drivephysics.js"></script>
+<script src="js/netcode.js"></script>
+<script src="js/liveops.js"></script>
+<script src="js/ai.js"></script>
+<script src="js/procgen.js"></script>
+<script src="js/analytics.js"></script>
+<script src="js/accessibility.js"></script>
+<script src="js/security.js"></script>
+<!-- 2. Liste: 100 yeni oynanış özelliği (10 modül) -->
+<script src="js/customization.js"></script>
+<script src="js/gamemodes2.js"></script>
+<script src="js/social.js"></script>
+<!-- KLAN SİSTEMİ (2 Ağu) — SIRA KRİTİK: klan.js çekirdek, diğerleri onu çağırır.
+     ⚠ social.js'ten SONRA (Clan/ClanWar orada), hookups.js'ten ÖNCE yüklenir. -->
+<script src="js/klan.js"></script>
+<script src="js/klan-sim.js"></script>
+<script src="js/klan-kutu.js"></script>
+<script src="js/klan-etkinlik.js"></script>
+<script src="js/klan-savas.js"></script>
+<script src="js/klan-ui.js"></script>
+<script src="js/etkinlikler.js"></script>
+<!-- HCR2 REFERANS EKRANLARI (3 Ağu) — SIRA KRİTİK:
+     ekran-sandik.js parça ikonlarını `EkranGaraj._ikon`/`EkranGaraj.PARCA`'dan
+     okur → ekran-garaj.js'ten SONRA yüklenmeli. -->
+<script src="js/ekran-ana.js"></script>
+<script src="js/ekran-garaj.js"></script>
+<script src="js/ekran-cups.js"></script>
+<script src="js/ekran-sandik.js"></script>
+<script src="js/progression2.js"></script>
+<script src="js/economy2.js"></script>
+<script src="js/mapenv.js"></script>
+<script src="js/gameplay2.js"></script>
+<script src="js/visualaudio.js"></script>
+<script src="js/meta2.js"></script>
+<script src="js/funextra.js"></script>
+<script src="js/savedata.js"></script>
+<script src="js/savemigrate.js"></script>
+<script src="js/telemetry.js"></script>
+<script src="js/dda.js"></script>
+<script src="js/mapsettings.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/particles.js"></script>
+<script src="js/quality.js"></script>
+<script src="js/camera.js"></script>
+<script src="js/terrain.js"></script>
+<script src="js/vehicles.js"></script>
+<script src="js/physics.js"></script>
+<script src="js/economy.js"></script>
+<script src="js/career.js"></script>
+<script src="js/achievements.js"></script>
+<script src="js/hud.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/intro.js"></script>
+<script src="js/renderer.js"></script>
+<script src="js/loops.js"></script>
+<script src="js/environment.js"></script>
+<script src="js/modes.js"></script>
+<script src="js/missions.js"></script>
+<script src="js/rewards.js"></script>
+<script src="js/settings.js"></script>
+<!-- Kaynak metin sözlükleri — İKİSİ DE i18n.js'ten ÖNCE yüklenmeli.
+     src-tr: Türkçe yazılmış metinler → EN/DE   |   src-en: İngilizce yazılmış metinler → TR/DE -->
+<script src="js/i18n-src-tr.js"></script>
+<script src="js/i18n-src-en.js"></script>
+<script src="js/i18n.js"></script>
+<!-- Firebase (Ghost Multiplayer) — config boşsa sessizce yerel moda düşer -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
+<script src="js/mp-config.js"></script>
+<script src="js/multiplayer.js"></script>
+<script src="js/mprooms.js"></script>
+<script src="js/campaign.js"></script>
+<script src="js/tuning.js"></script>
+<script src="js/seasonevents.js"></script>
+<script src="js/cardcollection.js"></script>
+<script src="js/luckwheel.js"></script>
+<script src="js/profile.js"></script>
+<script src="js/powermodes.js"></script>
+<script src="js/replay.js"></script>
+<script src="js/dynamicaudio.js"></script>
+<script src="js/shopoffers.js"></script>
+<script src="js/paintshop.js"></script>
+<script src="js/dailyquests.js"></script>
+<script src="js/skilltree.js"></script>
+<script src="js/statspanel.js"></script>
+<script src="js/prestige.js"></script>
+<script src="js/blackmarket.js"></script>
+<!-- Dokunma hedefi büyütücü — YUKARIDAKİ MODÜLLERDEN SONRA yüklenmeli:
+     draw() fonksiyonlarını sarmalayıp buton kutularını 44 px'e çıkarır. -->
+<script src="js/mobilhedef.js"></script>
+<script src="js/game.js"></script>
+<script src="js/safety.js"></script>
+<script src="js/openworld.js"></script>
+<script src="js/main.js"></script>
+<script src="js/selftest.js"></script>
+<!-- PWA kurulum butonu — HER cihazda (masaüstü dahil). Cihaza özel değil. -->
+<script src="js/install.js"></script>
+<!-- Oynanış + garaj + mobil UI + mod seçici entegrasyonu (additive, en son) -->
+<!-- Ultra görsel katmanı (30 Tmz). SIRA ÖNEMLİ: kalite.js önce (gorsel.js onu
+     okur), ikisi de renderer.js'ten SONRA (Renderer.drawGame sarmalanıyor). -->
+<script src="js/kalite.js"></script>
+<!-- 7 ağır efekt modülü (30 Tmz). SIRA: kalite → modüller → gorsel (hattı kurar). -->
+<script src="js/gorsel-isik.js"></script>
+<script src="js/gorsel-lens.js"></script>
+<script src="js/gorsel-atmosfer.js"></script>
+<script src="js/gorsel-yansima.js"></script>
+<script src="js/gorsel-renk.js"></script>
+<script src="js/gorsel-hareket.js"></script>
+<script src="js/gorsel-hava.js"></script>
+<script src="js/gorsel.js"></script>
+<script src="js/hookups.js"></script>
+<!-- ─────────── ÜLKE SEÇİMİ + 193 BAYRAK (31 Tmz) ───────────
+     SIRA ÖNEMLİ: önce MOTOR (bayraklar.js), sonra 4 kıta VERİ dosyası
+     (hepsi Bayraklar.T'ye ekler), en son ulke.js (ekran + rozet).
+     🔴 Veri dosyaları motordan ÖNCE yüklenirse `Bayraklar` tanımsızdır ve
+        hepsi sessizce hiçbir şey eklemeden çıkar (tablo BOŞ kalır). -->
+<script src="js/bayraklar.js"></script>
+<script src="js/bayrak-avrupa.js"></script>
+<script src="js/bayrak-asya.js"></script>
+<script src="js/bayrak-afrika.js"></script>
+<script src="js/bayrak-amerika.js"></script>
+<script src="js/ulke.js"></script>
+<!-- ─────────── ÖLÜ MODÜL BAĞLAMA KATMANI (30 Tmz, 9 ajan) ───────────
+     84 modül yazılmıştı ama hiçbir yerden çağrılmıyordu (çalışma zamanı ölçümü:
+     0 tetiklenme). Bu 9 dosya onları ADDITIVE olarak gerçek oyuna bağlar:
+     mevcut fonksiyonlar bind edilip sarmalanır, orijinal ÖNCE çağrılır.
+     🔴 SIRA ÖNEMLİ: hepsi kaynak modüllerinden (game/particles/terrain/ui/
+        renderer/camera/hud) VE kalite.js + gorsel-*.js + hookups.js'ten SONRA.
+     🔴 Her efekt kendi try/catch'inde; biri patlarsa diğerleri çalışmaya devam eder. -->
+<script src="js/bagla-hud.js"></script>
+<script src="js/bagla-kamera.js"></script>
+<script src="js/bagla-parcacik.js"></script>
+<script src="js/bagla-arazi.js"></script>
+<script src="js/bagla-dunya.js"></script>
+<script src="js/bagla-rakip.js"></script>
+<script src="js/bagla-oynanis.js"></script>
+<script src="js/bagla-etkinlik.js"></script>
+<script src="js/bagla-arayuz.js"></script>
+<!-- ─────────── CİHAZ AYRIMI (28 Tmz) ───────────
+     mobile.js + mobileui.js SADECE telefon/tablette indirilir; masaüstü bunları
+     hiç istemez. İkisi de kendi kendine yeten modüller (başka dosyadan çağrılmıyor),
+     bu yüzden koşullu yüklemek güvenli.
+     `async = false` KRİTİK: dinamik eklenen script'ler varsayılan olarak async'tir
+     (sıra garantisi yok, DOMContentLoaded'ı beklemez). false yapınca ekleme
+     sırasıyla ve DOMContentLoaded'dan ÖNCE çalışırlar — tıpkı normal etiket gibi. -->
+<script>
+(function () {
+  var mobil = false;
+  try {
+    mobil = /Android|iPhone|iPad|iPod|IEMobile|Opera Mini|Mobile|Silk/i.test(navigator.userAgent)
+         || (('ontouchstart' in window || navigator.maxTouchPoints > 0)
+             && Math.min(screen.width, screen.height) < 820);
+  } catch (e) { mobil = false; }
+  if (!mobil) return;
+  ['js/mobile.js', 'js/mobileui.js'].forEach(function (src) {
+    var s = document.createElement('script');
+    s.src = src;
+    s.async = false;
+    document.head.appendChild(s);
+  });
+})();
+</script>
+<script src="js/modeselect.js"></script>
+<script src="js/uitheme.js"></script>
+<!-- PWA: service worker kaydı + OTOMATİK GÜNCELLEME yöneticisi.
+     ⚠ Kayıt artık burada DEĞİL — js/guncelleme.js yapıyor. Orada ayrıca
+     sürüm kontrolü, yeni sürüm tespiti ve koşuyu kesmeyen yenileme var.
+     Burada iki kez register edilirse ikinci kayıt ilkini gölgeler. -->
+<script src="js/guncelleme.js"></script>
+<script>
+// Her şey yüklenince açılış ekranını yumuşakça kaldır
+(function(){
+  function hideLoader(){
+    var el = document.getElementById('ahmet-loader');
+    if (!el) return;
+    el.classList.add('hide');
+    setTimeout(function(){ if (el && el.parentNode) el.parentNode.removeChild(el); }, 700);
+  }
+  if (document.readyState === 'complete') setTimeout(hideLoader, 500);
+  else window.addEventListener('load', function(){ setTimeout(hideLoader, 500); });
+  // Emniyet: en geç 8 sn sonra mutlaka kaldır
+  setTimeout(hideLoader, 8000);
+
+  // GLOBAL HATA AĞI: yakalanmayan bir hata olursa kullanıcı donuk/boş ekranda
+  // kalmasın — loader'ı kaldır ve küçük bir "yeniden yükle" ipucu göster.
+  var _errShown = false;
+  function _showFatal(msg){
+    if (_errShown) return; _errShown = true;
+    hideLoader();
+    try {
+      var b = document.createElement('div');
+      b.style.cssText = 'position:fixed;left:0;right:0;bottom:0;z-index:99999;'
+        + 'background:#1a2030;color:#e8eef7;font:14px system-ui,sans-serif;'
+        + 'padding:12px 16px;text-align:center;border-top:2px solid #ff8a3d';
+      b.innerHTML = 'Bir sorun oluştu. <b onclick="location.reload(true)" '
+        + 'style="color:#ff8a3d;text-decoration:underline;cursor:pointer">Yeniden yükle</b>'
+        + ' <span style="opacity:.6">(' + String(msg).slice(0,80) + ')</span>';
+      document.body.appendChild(b);
+    } catch(_) {}
+  }
+  window.addEventListener('error', function(e){
+    _showFatal((e && e.message) || 'hata');
+  });
+  window.addEventListener('unhandledrejection', function(e){
+    _showFatal((e && e.reason && e.reason.message) || 'promise hatası');
+  });
+})();
+</script>
+</body>
+</html>
